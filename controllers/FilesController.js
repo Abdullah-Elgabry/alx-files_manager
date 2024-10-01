@@ -29,6 +29,8 @@ const realpathAsync = promisify(realpath);
 const MAX_FILES_PER_PAGE = 20;
 const fileQueue = new Queue('thumbnail generation');
 const NULL_ID = Buffer.alloc(24, '0').toString('utf-8');
+
+// Function to validate if a given ID is valid
 const isValidId = (id) => {
   const size = 24;
   let i = 0;
@@ -54,9 +56,9 @@ const isValidId = (id) => {
 
 export default class FilesController {
   /**
-   * Uploads a file.
-   * @param {Request} req The Express request object.
-   * @param {Response} res The Express response object.
+   * Handles file upload, including saving the file and its metadata.
+   * @param {Request} req The request object containing file details.
+   * @param {Response} res The response object for sending upload status.
    */
   static async postUpload(req, res) {
     const { user } = req;
@@ -131,6 +133,11 @@ export default class FilesController {
     });
   }
 
+  /**
+   * Retrieves details of a specific file by its ID.
+   * @param {Request} req The request object containing the file ID.
+   * @param {Response} res The response object to return file details.
+   */
   static async getShow(req, res) {
     const { user } = req;
     const id = req.params ? req.params.id : NULL_ID;
@@ -158,9 +165,9 @@ export default class FilesController {
   }
 
   /**
-   * Retrieves files associated with a specific user.
-   * @param {Request} req The Express request object.
-   * @param {Response} res The Express response object.
+   * Retrieves a list of files for a user, with pagination support.
+   * @param {Request} req The request object containing pagination and parentId info.
+   * @param {Response} res The response object to return the list of files.
    */
   static async getIndex(req, res) {
     const { user } = req;
@@ -198,13 +205,12 @@ export default class FilesController {
     res.status(200).json(files);
   }
 
+  /**
+   * Publishes a file, making it publicly accessible.
+   * @param {Request} req The request object containing the file ID.
+   * @param {Response} res The response object to confirm the file is now public.
+   */
   static async putPublish(req, res) {
-    /**
-     * Publishes a file.
-     * @param {Request} req The Express request object.
-     * @param {Response} res The Express response object.
-     * @returns {Promise<void>} A promise that resolves with the response.
-     */
     const { user } = req;
     const { id } = req.params;
     const userId = user._id.toString();
@@ -233,13 +239,12 @@ export default class FilesController {
     });
   }
 
+  /**
+   * Unpublishes a file, revoking its public access.
+   * @param {Request} req The request object containing the file ID.
+   * @param {Response} res The response object to confirm the file is no longer public.
+   */
   static async putUnpublish(req, res) {
-    /**
-     * Unpublishes a file.
-     * @param {Request} req The Express request object.
-     * @param {Response} res The Express response object.
-     * @returns {Promise<void>} A promise that resolves with the response.
-     */
     const { user } = req;
     const { id } = req.params;
     const userId = user._id.toString();
@@ -269,18 +274,20 @@ export default class FilesController {
   }
 
   /**
-   * Retrieves the content of a file.
-   * @param {Request} req The Express request object.
-   * @param {Response} res The Express response object.
+   * Retrieves file content by ID, with options to stream or download.
+   * @param {Request} req The request object containing the file ID.
+   * @param {Response} res The response object to return the file content.
    */
   static async getFile(req, res) {
-    const user = await getUserFromXToken(req);
+    const { user } = req;
     const { id } = req.params;
-    const size = req.query.size || null;
-    const userId = user ? user._id.toString() : '';
+    const sizeOptions = req.query.size || null;
+    const userId = user._id ? user._id.toString() : '';
+
     const fileFilter = {
       _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
     };
+
     const file = await (await dbClient.filesCollection())
       .findOne(fileFilter);
 
@@ -288,26 +295,27 @@ export default class FilesController {
       res.status(404).json({ error: 'Not found' });
       return;
     }
+
     if (file.type === VALID_FILE_TYPES.folder) {
       res.status(400).json({ error: 'A folder doesn\'t have content' });
       return;
     }
+
     let filePath = file.localPath;
-    if (size) {
-      filePath = `${file.localPath}_${size}`;
+
+    if (sizeOptions) {
+      filePath = `${file.localPath}_${sizeOptions}`;
     }
+
     if (existsSync(filePath)) {
       const fileInfo = await statAsync(filePath);
-      if (!fileInfo.isFile()) {
-        res.status(404).json({ error: 'Not found' });
-        return;
-      }
+      const mimeType = contentType(file.name) || 'text/plain';
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Length', fileInfo.size);
+      res.status(200).sendFile(await realpathAsync(filePath));
     } else {
       res.status(404).json({ error: 'Not found' });
-      return;
     }
-    const absoluteFilePath = await realpathAsync(filePath);
-    res.setHeader('Content-Type', contentType(file.name) || 'text/plain; charset=utf-8');
-    res.status(200).sendFile(absoluteFilePath);
   }
 }
