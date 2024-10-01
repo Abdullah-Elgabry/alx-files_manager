@@ -1,3 +1,5 @@
+/* eslint-disable import/no-named-as-default */
+/* eslint-disable no-unused-vars */
 import { tmpdir } from 'os';
 import { promisify } from 'util';
 import Queue from 'bull/lib/queue';
@@ -26,7 +28,6 @@ const realpathAsync = promisify(realpath);
 const MAX_FILES_PER_PAGE = 20;
 const fileQueue = new Queue('thumbnail generation');
 const NULL_ID = Buffer.alloc(24, '0').toString('utf-8');
-
 const isValidId = (id) => {
   const size = 24;
   let i = 0;
@@ -81,7 +82,6 @@ export default class FilesController {
         .findOne({
           _id: new mongoDBCore.BSON.ObjectId(isValidId(parentId) ? parentId : NULL_ID),
         });
-
       if (!file) {
         res.status(400).json({ error: 'Parent not found' });
         return;
@@ -143,7 +143,6 @@ export default class FilesController {
         _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
         userId: new mongoDBCore.BSON.ObjectId(isValidId(userId) ? userId : NULL_ID),
       });
-
     if (!file) {
       res.status(404).json({ error: 'Not found' });
       return;
@@ -291,18 +290,14 @@ export default class FilesController {
       res.status(404).json({ error: 'Not found' });
       return;
     }
-
     if (file.type === VALID_FILE_TYPES.folder) {
       res.status(400).json({ error: 'A folder doesn\'t have content' });
       return;
     }
-
     let filePath = file.localPath;
-
     if (sizeOptions) {
       filePath = `${file.localPath}_${sizeOptions}`;
     }
-
     if (existsSync(filePath)) {
       const fileInfo = await statAsync(filePath);
       const mimeType = contentType(file.name) || 'text/plain';
