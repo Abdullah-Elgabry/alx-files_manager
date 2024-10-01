@@ -1,3 +1,5 @@
+/* eslint-disable import/no-named-as-default */
+/* eslint-disable no-unused-vars */
 import { tmpdir } from 'os';
 import { promisify } from 'util';
 import Queue from 'bull/lib/queue';
@@ -12,6 +14,7 @@ import mongoDBCore from 'mongodb/lib/core';
 import dbClient from '../utils/db';
 import { getUserFromXToken } from '../utils/auth';
 
+// Constants used in this file
 const VALID_FILE_TYPES = {
   folder: 'folder',
   file: 'file',
@@ -30,9 +33,9 @@ const isValidId = (id) => {
   const size = 24;
   let i = 0;
   const charRanges = [
-    [48, 57], // 0 - 9
-    [97, 102], // a - f
-    [65, 70], // A - F
+    [48, 57],
+    [97, 102],
+    [65, 70],
   ];
   if (typeof id !== 'string' || id.length !== size) {
     return false;
@@ -112,7 +115,6 @@ export default class FilesController {
     const insertionInfo = await (await dbClient.filesCollection())
       .insertOne(newFile);
     const fileId = insertionInfo.insertedId.toString();
-    // start thumbnail generation worker
     if (type === VALID_FILE_TYPES.image) {
       const jobName = `Image thumbnail [${userId}-${fileId}]`;
       fileQueue.add({ userId, fileId, name: jobName });
@@ -197,6 +199,12 @@ export default class FilesController {
   }
 
   static async putPublish(req, res) {
+    /**
+     * Publishes a file.
+     * @param {Request} req The Express request object.
+     * @param {Response} res The Express response object.
+     * @returns {Promise<void>} A promise that resolves with the response.
+     */
     const { user } = req;
     const { id } = req.params;
     const userId = user._id.toString();
@@ -226,6 +234,12 @@ export default class FilesController {
   }
 
   static async putUnpublish(req, res) {
+    /**
+     * Unpublishes a file.
+     * @param {Request} req The Express request object.
+     * @param {Response} res The Express response object.
+     * @returns {Promise<void>} A promise that resolves with the response.
+     */
     const { user } = req;
     const { id } = req.params;
     const userId = user._id.toString();
