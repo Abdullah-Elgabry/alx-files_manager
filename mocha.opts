@@ -1,0 +1,5 @@
+--require @babel/register
+--require tests/tst.pre
+--reporter spec
+--slow 3000=
+--exit
