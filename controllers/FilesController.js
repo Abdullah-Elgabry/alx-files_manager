@@ -53,9 +53,9 @@ const isValidId = (id) => {
 
 export default class FilesController {
   /**
-   * Uploads a file.
-   * @param {Request} req The Express request object.
-   * @param {Response} res The Express response object.
+   * this will work as a file upload.
+   * @param {Request} req obj.
+   * @param {Response} res obj
    */
   static async postUpload(req, res) {
     const { user } = req;
@@ -157,9 +157,9 @@ export default class FilesController {
   }
 
   /**
-   * Retrieves files associated with a specific user.
-   * @param {Request} req The Express request object.
-   * @param {Response} res The Express response object.
+   * this will ret the user file.
+   * @param {Request} req obj.
+   * @param {Response} res obj.
    */
   static async getIndex(req, res) {
     const { user } = req;
@@ -199,10 +199,9 @@ export default class FilesController {
 
   static async putPublish(req, res) {
     /**
-     * Publishes a file.
-     * @param {Request} req The Express request object.
-     * @param {Response} res The Express response object.
-     * @returns {Promise<void>} A promise that resolves with the response.
+     * this will work as a file pub.
+     * @param {Request} req obj.
+     * @param {Response} res obj.
      */
     const { user } = req;
     const { id } = req.params;
@@ -234,10 +233,9 @@ export default class FilesController {
 
   static async putUnpublish(req, res) {
     /**
-     * Unpublishes a file.
-     * @param {Request} req The Express request object.
-     * @param {Response} res The Express response object.
-     * @returns {Promise<void>} A promise that resolves with the response.
+     * this will work as a del pub.
+     * @param {Request} req obj.
+     * @param {Response} res obj.
      */
     const { user } = req;
     const { id } = req.params;
@@ -268,9 +266,9 @@ export default class FilesController {
   }
 
   /**
-   * Retrieves the content of a file.
-   * @param {Request} req The Express request object.
-   * @param {Response} res The Express response object.
+   * this will work as a ret dta.
+   * @param {Request} req obj.
+   * @param {Response} res obj.
    */
   static async getFile(req, res) {
     const user = await getUserFromXToken(req);
