@@ -32,9 +32,9 @@ const isValidId = (id) => {
   const size = 24;
   let i = 0;
   const charRanges = [
-    [48, 57],
-    [97, 102],
-    [65, 70],
+    [48, 57], // 0 - 9
+    [97, 102], // a - f
+    [65, 70], // A - F
   ];
   if (typeof id !== 'string' || id.length !== size) {
     return false;
@@ -53,9 +53,9 @@ const isValidId = (id) => {
 
 export default class FilesController {
   /**
-   * this will work as a file upload.
-   * @param {Request} req obj.
-   * @param {Response} res obj
+   * Uploads a file.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
    */
   static async postUpload(req, res) {
     const { user } = req;
@@ -96,6 +96,8 @@ export default class FilesController {
     const baseDir = `${process.env.FOLDER_PATH || ''}`.trim().length > 0
       ? process.env.FOLDER_PATH.trim()
       : joinPath(tmpdir(), DEFAULT_ROOT_FOLDER);
+    // default baseDir == '/tmp/files_manager'
+    // or (on Windows) '%USERPROFILE%/AppData/Local/Temp/files_manager';
     const newFile = {
       userId: new mongoDBCore.BSON.ObjectId(userId),
       name,
@@ -114,6 +116,7 @@ export default class FilesController {
     const insertionInfo = await (await dbClient.filesCollection())
       .insertOne(newFile);
     const fileId = insertionInfo.insertedId.toString();
+    // start thumbnail generation worker
     if (type === VALID_FILE_TYPES.image) {
       const jobName = `Image thumbnail [${userId}-${fileId}]`;
       fileQueue.add({ userId, fileId, name: jobName });
@@ -157,9 +160,9 @@ export default class FilesController {
   }
 
   /**
-   * this will ret the user file.
-   * @param {Request} req obj.
-   * @param {Response} res obj.
+   * Retrieves files associated with a specific user.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
    */
   static async getIndex(req, res) {
     const { user } = req;
@@ -198,11 +201,6 @@ export default class FilesController {
   }
 
   static async putPublish(req, res) {
-    /**
-     * this will work as a file pub.
-     * @param {Request} req obj.
-     * @param {Response} res obj.
-     */
     const { user } = req;
     const { id } = req.params;
     const userId = user._id.toString();
@@ -232,11 +230,6 @@ export default class FilesController {
   }
 
   static async putUnpublish(req, res) {
-    /**
-     * this will work as a del pub.
-     * @param {Request} req obj.
-     * @param {Response} res obj.
-     */
     const { user } = req;
     const { id } = req.params;
     const userId = user._id.toString();
@@ -266,9 +259,9 @@ export default class FilesController {
   }
 
   /**
-   * this will work as a ret dta.
-   * @param {Request} req obj.
-   * @param {Response} res obj.
+   * Retrieves the content of a file.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
    */
   static async getFile(req, res) {
     const user = await getUserFromXToken(req);
