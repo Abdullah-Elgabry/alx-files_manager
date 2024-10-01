@@ -22,7 +22,7 @@ export default class AppController {
   }
 
   /**
-   * Retrieves and responds with the total count of users and files from the database.
+   * this will ret a users and files from the database.
    * @param {Object} req The request object.
    * @param {Object} res The response object.
    */
