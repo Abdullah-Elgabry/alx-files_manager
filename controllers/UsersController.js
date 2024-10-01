@@ -7,7 +7,7 @@ const userQueue = new Queue('email sending');
 
 export default class UsersController {
   /**
-   * Create a new user.
+   * This will Creates a new user.
    * @param {Request} req The Express request object.
    * @param {Response} res The Express response object.
    */
