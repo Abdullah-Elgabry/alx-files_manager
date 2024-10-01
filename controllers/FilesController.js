@@ -1,4 +1,3 @@
-/* eslint-disable import/no-named-as-default */
 /* eslint-disable no-unused-vars */
 import { tmpdir } from 'os';
 import { promisify } from 'util';
@@ -7,6 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   mkdir, writeFile, stat, existsSync, realpath,
 } from 'fs';
+import {Buffer} from 'buffer';
+Buffer.from('anything','base64');
 import { join as joinPath } from 'path';
 import { Request, Response } from 'express';
 import { contentType } from 'mime-types';
