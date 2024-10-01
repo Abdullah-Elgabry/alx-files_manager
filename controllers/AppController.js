@@ -3,8 +3,9 @@ import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 
 /**
- * This class is for the appController.
- * @classdesc This will show ctr.
+ * AppController class.
+ * @class
+ * @classdesc Class representing the AppController.
  */
 
 export default class AppController {

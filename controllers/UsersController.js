@@ -1,3 +1,4 @@
+
 /* eslint-disable import/no-named-as-default */
 import sha1 from 'sha1';
 import Queue from 'bull/lib/queue';
@@ -7,7 +8,7 @@ const userQueue = new Queue('email sending');
 
 export default class UsersController {
   /**
-   * This will Creates a new user.
+   * Create a new user.
    * @param {Request} req The Express request object.
    * @param {Response} res The Express response object.
    */
