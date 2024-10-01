@@ -55,28 +55,6 @@ export default class FilesController {
   /**
    * @api {post} /files Upload a file
    * @apiName PostUpload
-   * @apiGroup Files
-   *
-   * @apiHeader {String} X-Token Authentication token
-   *
-   * @apiBody {String} name Name of the file
-   * @apiBody {String} type Type of the file (file|folder|image)
-   * @apiParam {String} [parentId] Parent folder ID (default: 0 for root)
-   * @apiParam {Boolean} [isPublic] File visibility (default: false)
-   * @apiParam {String} [data] Base64 encoded file content (required for non-folders)
-   *
-   * @apiSuccess {String} id File ID
-   * @apiSuccess {String} userId User ID
-   * @apiSuccess {String} name File name
-   * @apiSuccess {String} type File type
-   * @apiSuccess {Boolean} isPublic File visibility
-   * @apiSuccess {String|Number} parentId Parent folder ID
-   *
-   * @apiError 400 Missing name
-   * @apiError 400 Missing type
-   * @apiError 400 Missing data
-   * @apiError 400 Parent not found
-   * @apiError 400 Parent is not a folder
    */
   static async postUpload(req, res) {
     const { user } = req;
@@ -117,8 +95,6 @@ export default class FilesController {
     const baseDir = `${process.env.FOLDER_PATH || ''}`.trim().length > 0
       ? process.env.FOLDER_PATH.trim()
       : joinPath(tmpdir(), DEFAULT_ROOT_FOLDER);
-    // default baseDir == '/tmp/files_manager'
-    // or (on Windows) '%USERPROFILE%/AppData/Local/Temp/files_manager';
     const newFile = {
       userId: new mongoDBCore.BSON.ObjectId(userId),
       name,
@@ -159,17 +135,6 @@ export default class FilesController {
    * @apiName GetShow
    * @apiGroup Files
    *
-   * @apiHeader {String} X-Token Authentication token
-   *
-   * @apiParam {String} id File ID
-   *
-   * @apiSuccess {String} id File ID
-   * @apiSuccess {String} userId User ID
-   * @apiSuccess {String} name File name
-   * @apiSuccess {String} type File type
-   * @apiSuccess {Boolean} isPublic File visibility
-   * @apiSuccess {String|Number} parentId Parent folder ID
-   *
    * @apiError 404 Not found
    */
   static async getShow(req, res) {
@@ -202,19 +167,6 @@ export default class FilesController {
    * @api {get} /files Get user files
    * @apiName GetIndex
    * @apiGroup Files
-   *
-   * @apiHeader {String} X-Token Authentication token
-   *
-   * @apiParam {String} [parentId] Parent folder ID (default: 0 for root)
-   * @apiParam {Number} [page] Page number for pagination (default: 0)
-   *
-   * @apiSuccess {Object[]} files List of file objects
-   * @apiSuccess {String} files.id File ID
-   * @apiSuccess {String} files.userId User ID
-   * @apiSuccess {String} files.name File name
-   * @apiSuccess {String} files.type File type
-   * @apiSuccess {Boolean} files.isPublic File visibility
-   * @apiSuccess {String|Number} files.parentId Parent folder ID
    */
   static async getIndex(req, res) {
     const { user } = req;
@@ -253,20 +205,9 @@ export default class FilesController {
   }
 
   /**
-   * @api {put} /files/:id/publish Publish a file
-   * @apiName PutPublish
-   * @apiGroup Files
-   *
    * @apiHeader {String} X-Token Authentication token
    *
    * @apiParam {String} id File ID
-   *
-   * @apiSuccess {String} id File ID
-   * @apiSuccess {String} userId User ID
-   * @apiSuccess {String} name File name
-   * @apiSuccess {String} type File type
-   * @apiSuccess {Boolean} isPublic File visibility (always true)
-   * @apiSuccess {String|Number} parentId Parent folder ID
    *
    * @apiError 404 Not found
    */
@@ -301,16 +242,6 @@ export default class FilesController {
 
   /**
    * @api {put} /files/:id/unpublish Unpublish a file
-   * @apiName PutUnpublish
-   * @apiGroup Files
-   *
-   * @apiHeader {String} X-Token Authentication token
-   *
-   * @apiParam {String} id File ID
-   *
-   * @apiSuccess {String} id File ID
-   * @apiSuccess {String} userId User ID
-   * @apiSuccess {String} name File name
    * @apiSuccess {String} type File type
    * @apiSuccess {Boolean} isPublic File visibility (always false)
    * @apiSuccess {String|Number} parentId Parent folder ID
