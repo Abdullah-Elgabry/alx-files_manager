@@ -28,13 +28,14 @@ const realpathAsync = promisify(realpath);
 const MAX_FILES_PER_PAGE = 20;
 const fileQueue = new Queue('thumbnail generation');
 const NULL_ID = Buffer.alloc(24, '0').toString('utf-8');
+
 const isValidId = (id) => {
   const size = 24;
   let i = 0;
   const charRanges = [
-    [48, 57], // 0 - 9
-    [97, 102], // a - f
-    [65, 70], // A - F
+    [48, 57],
+    [97, 102],
+    [65, 70],
   ];
   if (typeof id !== 'string' || id.length !== size) {
     return false;
@@ -53,8 +54,9 @@ const isValidId = (id) => {
 
 export default class FilesController {
   /**
-   * @api {post} /files Upload a file
-   * @apiName PostUpload
+   * Handles file upload, including saving the file and its metadata.
+   * @param {Request} req The request object containing file details.
+   * @param {Response} res The response object for sending upload status.
    */
   static async postUpload(req, res) {
     const { user } = req;
@@ -113,7 +115,6 @@ export default class FilesController {
     const insertionInfo = await (await dbClient.filesCollection())
       .insertOne(newFile);
     const fileId = insertionInfo.insertedId.toString();
-    // start thumbnail generation worker
     if (type === VALID_FILE_TYPES.image) {
       const jobName = `Image thumbnail [${userId}-${fileId}]`;
       fileQueue.add({ userId, fileId, name: jobName });
@@ -131,11 +132,9 @@ export default class FilesController {
   }
 
   /**
-   * @api {get} /files/:id Get file information
-   * @apiName GetShow
-   * @apiGroup Files
-   *
-   * @apiError 404 Not found
+   * Retrieves details of a specific file by its ID.
+   * @param {Request} req The request object containing the file ID.
+   * @param {Response} res The response object to return file details.
    */
   static async getShow(req, res) {
     const { user } = req;
@@ -164,9 +163,9 @@ export default class FilesController {
   }
 
   /**
-   * @api {get} /files Get user files
-   * @apiName GetIndex
-   * @apiGroup Files
+   * Retrieves a list of files for a user, with pagination support.
+   * @param {Request} req containing pagination and parentId info.
+   * @param {Response} res The response object to return the list of files.
    */
   static async getIndex(req, res) {
     const { user } = req;
@@ -205,11 +204,9 @@ export default class FilesController {
   }
 
   /**
-   * @apiHeader {String} X-Token Authentication token
-   *
-   * @apiParam {String} id File ID
-   *
-   * @apiError 404 Not found
+   * Publishes a file, making it publicly accessible.
+   * @param {Request} req The request object containing the file ID.
+   * @param {Response} res confirm the file is now public.
    */
   static async putPublish(req, res) {
     const { user } = req;
@@ -241,12 +238,9 @@ export default class FilesController {
   }
 
   /**
-   * @api {put} /files/:id/unpublish Unpublish a file
-   * @apiSuccess {String} type File type
-   * @apiSuccess {Boolean} isPublic File visibility (always false)
-   * @apiSuccess {String|Number} parentId Parent folder ID
-   *
-   * @apiError 404 Not found
+   * Unpublishes a file, revoking its public access.
+   * @param {Request} req The request object containing the file ID.
+   * @param {Response} res confirm the file is no longer public.
    */
   static async putUnpublish(req, res) {
     const { user } = req;
@@ -278,28 +272,20 @@ export default class FilesController {
   }
 
   /**
-   * @api {get} /files/:id/data Get file content
-   * @apiName GetFile
-   * @apiGroup Files
-   *
-   * @apiHeader {String} [X-Token] Authentication token (required for non-public files)
-   *
-   * @apiParam {String} id File ID
-   * @apiParam {String} [size] Thumbnail size (for images)
-   *
-   * @apiSuccess {File} file File content
-   *
-   * @apiError 404 Not found
-   * @apiError 400 A folder doesn't have content
+   * Retrieves file content by ID, with options to stream or download.
+   * @param {Request} req The request object containing the file ID.
+   * @param {Response} res The response object to return the file content.
    */
   static async getFile(req, res) {
-    const user = await getUserFromXToken(req);
+    const { user } = req;
     const { id } = req.params;
-    const size = req.query.size || null;
-    const userId = user ? user._id.toString() : '';
+    const sizeOptions = req.query.size || null;
+    const userId = user._id ? user._id.toString() : '';
+
     const fileFilter = {
       _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
     };
+
     const file = await (await dbClient.filesCollection())
       .findOne(fileFilter);
 
@@ -307,26 +293,27 @@ export default class FilesController {
       res.status(404).json({ error: 'Not found' });
       return;
     }
+
     if (file.type === VALID_FILE_TYPES.folder) {
       res.status(400).json({ error: 'A folder doesn\'t have content' });
       return;
     }
+
     let filePath = file.localPath;
-    if (size) {
-      filePath = `${file.localPath}_${size}`;
+
+    if (sizeOptions) {
+      filePath = `${file.localPath}_${sizeOptions}`;
     }
+
     if (existsSync(filePath)) {
       const fileInfo = await statAsync(filePath);
-      if (!fileInfo.isFile()) {
-        res.status(404).json({ error: 'Not found' });
-        return;
-      }
+      const mimeType = contentType(file.name) || 'text/plain';
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader('Content-Length', fileInfo.size);
+      res.status(200).sendFile(await realpathAsync(filePath));
     } else {
       res.status(404).json({ error: 'Not found' });
-      return;
     }
-    const absoluteFilePath = await realpathAsync(filePath);
-    res.setHeader('Content-Type', contentType(file.name) || 'text/plain; charset=utf-8');
-    res.status(200).sendFile(absoluteFilePath);
   }
 }
