@@ -5,17 +5,11 @@ import dbClient from '../utils/db';
 
 const userQueue = new Queue('email sending');
 
-/**
- * The UsersController handles user-related operations, 
- * such as creating new users and retrieving user information.
- */
 export default class UsersController {
   /**
-   * Creates a new user in the system. The user must provide an email and a password.
-   * If the email is already registered, an error response is sent.
-   * @param {Request} req The Express request object containing the user's email and password.
-   * @param {Response} res The Express response object used to return the status and data.
-   * @returns {void}
+   * Create a new user.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
    */
   static async postNew(req, res) {
     const email = req.body ? req.body.email : null;
@@ -43,12 +37,6 @@ export default class UsersController {
     res.status(201).json({ email, id: userId });
   }
 
-  /**
-   * Retrieves the current logged-in user's information, including their email and ID.
-   * @param {Request} req The Express request object containing the authenticated user's information.
-   * @param {Response} res The Express response object used to send back the user's details.
-   * @returns {void}
-   */
   static async getMe(req, res) {
     const { user } = req;
 
