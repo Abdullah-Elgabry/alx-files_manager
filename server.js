@@ -5,6 +5,7 @@ import injectMiddlewares from './libs/middlewares';
 
 const server = express();
 
+// Inject middlewares and routes
 injectMiddlewares(server);
 injectRoutes(server);
 startServer(server);
