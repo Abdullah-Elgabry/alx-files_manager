@@ -14,7 +14,6 @@ import mongoDBCore from 'mongodb/lib/core';
 import dbClient from '../utils/db';
 import { getUserFromXToken } from '../utils/auth';
 
-// Constants used in this file
 const VALID_FILE_TYPES = {
   folder: 'folder',
   file: 'file',
@@ -30,7 +29,6 @@ const MAX_FILES_PER_PAGE = 20;
 const fileQueue = new Queue('thumbnail generation');
 const NULL_ID = Buffer.alloc(24, '0').toString('utf-8');
 
-// Function to validate if a given ID is valid
 const isValidId = (id) => {
   const size = 24;
   let i = 0;
