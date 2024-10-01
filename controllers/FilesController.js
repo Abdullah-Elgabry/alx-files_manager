@@ -32,9 +32,9 @@ const isValidId = (id) => {
   const size = 24;
   let i = 0;
   const charRanges = [
-    [48, 57],
-    [97, 102],
-    [65, 70],
+    [48, 57], // 0 - 9
+    [97, 102], // a - f
+    [65, 70], // A - F
   ];
   if (typeof id !== 'string' || id.length !== size) {
     return false;
@@ -53,9 +53,9 @@ const isValidId = (id) => {
 
 export default class FilesController {
   /**
-   * Handles file upload, including saving the file and its metadata.
-   * @param {Request} req The request object containing file details.
-   * @param {Response} res The response object for sending upload status.
+   * Uploads a file.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
    */
   static async postUpload(req, res) {
     const { user } = req;
@@ -82,6 +82,7 @@ export default class FilesController {
         .findOne({
           _id: new mongoDBCore.BSON.ObjectId(isValidId(parentId) ? parentId : NULL_ID),
         });
+
       if (!file) {
         res.status(400).json({ error: 'Parent not found' });
         return;
@@ -95,6 +96,8 @@ export default class FilesController {
     const baseDir = `${process.env.FOLDER_PATH || ''}`.trim().length > 0
       ? process.env.FOLDER_PATH.trim()
       : joinPath(tmpdir(), DEFAULT_ROOT_FOLDER);
+    // default baseDir == '/tmp/files_manager'
+    // or (on Windows) '%USERPROFILE%/AppData/Local/Temp/files_manager';
     const newFile = {
       userId: new mongoDBCore.BSON.ObjectId(userId),
       name,
@@ -113,6 +116,7 @@ export default class FilesController {
     const insertionInfo = await (await dbClient.filesCollection())
       .insertOne(newFile);
     const fileId = insertionInfo.insertedId.toString();
+    // start thumbnail generation worker
     if (type === VALID_FILE_TYPES.image) {
       const jobName = `Image thumbnail [${userId}-${fileId}]`;
       fileQueue.add({ userId, fileId, name: jobName });
@@ -129,11 +133,6 @@ export default class FilesController {
     });
   }
 
-  /**
-   * Retrieves details of a specific file by its ID.
-   * @param {Request} req The request object containing the file ID.
-   * @param {Response} res The response object to return file details.
-   */
   static async getShow(req, res) {
     const { user } = req;
     const id = req.params ? req.params.id : NULL_ID;
@@ -143,6 +142,7 @@ export default class FilesController {
         _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
         userId: new mongoDBCore.BSON.ObjectId(isValidId(userId) ? userId : NULL_ID),
       });
+
     if (!file) {
       res.status(404).json({ error: 'Not found' });
       return;
@@ -160,9 +160,9 @@ export default class FilesController {
   }
 
   /**
-   * Retrieves a list of files for a user, with pagination support.
-   * @param {Request} req containing pagination and parentId info.
-   * @param {Response} res The response object to return the list of files.
+   * Retrieves files associated with a specific user.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
    */
   static async getIndex(req, res) {
     const { user } = req;
@@ -200,11 +200,6 @@ export default class FilesController {
     res.status(200).json(files);
   }
 
-  /**
-   * Publishes a file, making it publicly accessible.
-   * @param {Request} req The request object containing the file ID.
-   * @param {Response} res confirm the file is now public.
-   */
   static async putPublish(req, res) {
     const { user } = req;
     const { id } = req.params;
@@ -234,11 +229,6 @@ export default class FilesController {
     });
   }
 
-  /**
-   * Unpublishes a file, revoking its public access.
-   * @param {Request} req The request object containing the file ID.
-   * @param {Response} res confirm the file is no longer public.
-   */
   static async putUnpublish(req, res) {
     const { user } = req;
     const { id } = req.params;
@@ -269,20 +259,18 @@ export default class FilesController {
   }
 
   /**
-   * Retrieves file content by ID, with options to stream or download.
-   * @param {Request} req The request object containing the file ID.
-   * @param {Response} res The response object to return the file content.
+   * Retrieves the content of a file.
+   * @param {Request} req The Express request object.
+   * @param {Response} res The Express response object.
    */
   static async getFile(req, res) {
-    const { user } = req;
+    const user = await getUserFromXToken(req);
     const { id } = req.params;
-    const sizeOptions = req.query.size || null;
-    const userId = user._id ? user._id.toString() : '';
-
+    const size = req.query.size || null;
+    const userId = user ? user._id.toString() : '';
     const fileFilter = {
       _id: new mongoDBCore.BSON.ObjectId(isValidId(id) ? id : NULL_ID),
     };
-
     const file = await (await dbClient.filesCollection())
       .findOne(fileFilter);
 
@@ -295,17 +283,21 @@ export default class FilesController {
       return;
     }
     let filePath = file.localPath;
-    if (sizeOptions) {
-      filePath = `${file.localPath}_${sizeOptions}`;
+    if (size) {
+      filePath = `${file.localPath}_${size}`;
     }
     if (existsSync(filePath)) {
       const fileInfo = await statAsync(filePath);
-      const mimeType = contentType(file.name) || 'text/plain';
-      res.setHeader('Content-Type', mimeType);
-      res.setHeader('Content-Length', fileInfo.size);
-      res.status(200).sendFile(await realpathAsync(filePath));
+      if (!fileInfo.isFile()) {
+        res.status(404).json({ error: 'Not found' });
+        return;
+      }
     } else {
       res.status(404).json({ error: 'Not found' });
+      return;
     }
+    const absoluteFilePath = await realpathAsync(filePath);
+    res.setHeader('Content-Type', contentType(file.name) || 'text/plain; charset=utf-8');
+    res.status(200).sendFile(absoluteFilePath);
   }
 }
