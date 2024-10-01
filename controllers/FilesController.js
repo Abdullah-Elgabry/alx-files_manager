@@ -1,5 +1,3 @@
-/* eslint-disable import/no-named-as-default */
-/* eslint-disable no-unused-vars */
 import { tmpdir } from 'os';
 import { promisify } from 'util';
 import Queue from 'bull/lib/queue';
@@ -308,7 +306,6 @@ export default class FilesController {
     if (existsSync(filePath)) {
       const fileInfo = await statAsync(filePath);
       const mimeType = contentType(file.name) || 'text/plain';
-
       res.setHeader('Content-Type', mimeType);
       res.setHeader('Content-Length', fileInfo.size);
       res.status(200).sendFile(await realpathAsync(filePath));
