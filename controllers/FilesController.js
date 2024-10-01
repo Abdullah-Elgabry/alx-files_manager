@@ -33,7 +33,7 @@ const MAX_FILES_PER_PAGE = 20;
 const fileQueue = new Queue('thumbnail generation');
 const NULL_ID = Buffer.alloc(24, '0').toString('utf-8');
 
-// Validates if the provided id is correctly formatted
+// Validates will if the provided id is correctly formatted
 const isValidId = (id) => {
   const size = 24;
   let i = 0;
