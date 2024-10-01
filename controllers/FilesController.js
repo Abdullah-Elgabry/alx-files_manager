@@ -164,7 +164,7 @@ export default class FilesController {
 
   /**
    * Retrieves a list of files for a user, with pagination support.
-   * @param {Request} req The request object containing pagination and parentId info.
+   * @param {Request} req containing pagination and parentId info.
    * @param {Response} res The response object to return the list of files.
    */
   static async getIndex(req, res) {
@@ -206,7 +206,7 @@ export default class FilesController {
   /**
    * Publishes a file, making it publicly accessible.
    * @param {Request} req The request object containing the file ID.
-   * @param {Response} res The response object to confirm the file is now public.
+   * @param {Response} res confirm the file is now public.
    */
   static async putPublish(req, res) {
     const { user } = req;
@@ -240,7 +240,7 @@ export default class FilesController {
   /**
    * Unpublishes a file, revoking its public access.
    * @param {Request} req The request object containing the file ID.
-   * @param {Response} res The response object to confirm the file is no longer public.
+   * @param {Response} res confirm the file is no longer public.
    */
   static async putUnpublish(req, res) {
     const { user } = req;
